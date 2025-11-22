@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VNC Workspace Manager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="background-overlay"></div>
+
+    <nav class="navbar" id="navbar" style="display: none;">
+        <div class="nav-brand" onclick="app.navigateTo('dashboard')">
+            <i class="fa-solid fa-network-wired"></i> VNC Workspaces
+        </div>
+        <div class="nav-links">
+            <a href="#" onclick="app.navigateTo('dashboard')" class="nav-link active" id="nav-dashboard">Dashboard</a>
+            <a href="#" onclick="app.navigateTo('admin')" class="nav-link hidden" id="nav-admin">Admin</a>
+            <div class="theme-toggle" onclick="app.toggleTheme()">
+                <i class="fa-solid fa-moon" id="theme-icon"></i>
+            </div>
+            <div class="user-profile">
+                <span id="user-name">User</span>
+                <button onclick="app.logout()" class="btn-logout"><i
+                        class="fa-solid fa-right-from-bracket"></i></button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <!-- Login View -->
+        <section id="login-view" class="view active">
+            <div class="auth-card">
+                <div class="auth-header">
+                    <h1>Welcome Back</h1>
+                    <p>Access your virtual workspace environment</p>
+                </div>
+                <form id="login-form" onsubmit="app.handleLogin(event)">
+                    <div class="form-group">
+                        <label><i class="fa-solid fa-user"></i> Username</label>
+                        <input type="text" id="login-username" required placeholder="Enter your username">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fa-solid fa-lock"></i> Password</label>
+                        <input type="password" id="login-password" required placeholder="Enter your password">
+                    </div>
+                    <button type="submit" class="btn-primary btn-block">Sign In</button>
+                    <div class="divider" style="text-align: center; margin: 10px 0;">OR</div>
+                    <button type="button" onclick="app.handleAuthentikLogin()" class="btn-secondary btn-block"
+                        style="background-color: #fd4b2d; color: white; border: none;">
+                        <i class="fa-solid fa-shield-halved"></i> Login with Authentik
+                    </button>
+                </form>
+                <div class="auth-footer">
+                    <p>Don't have an account? <a href="#" onclick="app.toggleAuthMode()">Register</a></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Register View -->
+        <section id="register-view" class="view">
+            <div class="auth-card">
+                <div class="auth-header">
+                    <h1>Create Account</h1>
+                    <p>Join the workspace platform</p>
+                </div>
+                <form id="register-form" onsubmit="app.handleRegister(event)">
+                    <div class="form-group">
+                        <label><i class="fa-solid fa-user"></i> Username</label>
+                        <input type="text" id="reg-username" required placeholder="Choose a username">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fa-solid fa-envelope"></i> Email</label>
+                        <input type="email" id="reg-email" placeholder="Enter your email (optional)">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fa-solid fa-lock"></i> Password</label>
+                        <input type="password" id="reg-password" required placeholder="Choose a password">
+                    </div>
+                    <button type="submit" class="btn-primary btn-block">Register</button>
+                </form>
+                <div class="auth-footer">
+                    <p>Already have an account? <a href="#" onclick="app.toggleAuthMode()">Sign In</a></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dashboard View -->
+        <section id="dashboard-view" class="view">
+            <div class="dashboard-header">
+                <h2>Available Workspaces</h2>
+                <div class="session-status" id="active-session-card" style="display: none;">
+                    <div class="status-info">
+                        <span class="status-indicator pulse"></span>
+                        <div>
+                            <h3>Active Session: <span id="session-ws-name">Ubuntu</span></h3>
+                            <p>Running on port <span id="session-port">6901</span></p>
+                        </div>
+                    </div>
+                    <div class="status-actions">
+                        <button onclick="app.connectSession()" class="btn-success"><i class="fa-solid fa-desktop"></i>
+                            Connect</button>
+                        <button onclick="app.stopSession()" class="btn-danger"><i class="fa-solid fa-power-off"></i>
+                            Stop</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="workspaces-grid" id="workspaces-container">
+                <!-- Workspaces injected here -->
+            </div>
+        </section>
+
+        <!-- Admin View -->
+        <section id="admin-view" class="view">
+            <div class="admin-layout">
+                <aside class="admin-sidebar">
+                    <ul>
+                        <li onclick="app.switchAdminTab('users')" class="active" id="tab-users"><i
+                                class="fa-solid fa-users"></i> Users</li>
+                        <li onclick="app.switchAdminTab('workspaces')" id="tab-workspaces"><i
+                                class="fa-solid fa-box-open"></i> Workspaces</li>
+                        <li onclick="app.switchAdminTab('sessions')" id="tab-sessions"><i
+                                class="fa-solid fa-server"></i> Sessions</li>
+                        <li onclick="app.switchAdminTab('settings')" id="tab-settings"><i class="fa-solid fa-gear"></i>
+                            Settings</li>
+                    </ul>
+                </aside>
+                <div class="admin-content">
+                    <!-- Stats Cards -->
+                    <div class="stats-grid" id="admin-stats">
+                        <!-- Stats injected here -->
+                    </div>
+
+                    <!-- Users Tab -->
+                    <div id="admin-users-view" class="admin-tab active">
+                        <div class="tab-header">
+                            <h3>User Management</h3>
+                            <button onclick="app.showCreateUserModal()" class="btn-sm btn-primary"><i
+                                    class="fa-solid fa-plus"></i> Add User</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Username</th>
+                                        <th>Role</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="users-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Workspaces Tab -->
+                    <div id="admin-workspaces-view" class="admin-tab">
+                        <div class="tab-header">
+                            <h3>Workspace Images</h3>
+                            <button onclick="app.showCreateWorkspaceModal()" class="btn-sm btn-primary"><i
+                                    class="fa-solid fa-plus"></i> Add Image</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Image</th>
+                                        <th>Name</th>
+                                        <th>Category</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="workspaces-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Sessions Tab -->
+                    <div id="admin-sessions-view" class="admin-tab">
+                        <div class="tab-header">
+                            <h3>Active Sessions</h3>
+                            <button onclick="app.loadAdminSessions()" class="btn-sm btn-secondary"><i
+                                    class="fa-solid fa-rotate"></i> Refresh</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Workspace</th>
+                                        <th>Container</th>
+                                        <th>Port</th>
+                                        <th>Started</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sessions-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Settings Tab -->
+                    <div id="admin-settings-view" class="admin-tab">
+                        <div class="tab-header">
+                            <h3>System Settings</h3>
+                        </div>
+                        <div class="settings-card">
+                            <div class="form-group">
+                                <label>Session Timeout (Minutes)</label>
+                                <input type="number" id="setting-timeout" value="60" class="form-control">
+                                <small>Sessions inactive for this long will be automatically stopped.</small>
+                            </div>
+                            <button onclick="app.saveSessionTimeout()" class="btn-primary">Save Settings</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <script src="app_v2.js"></script>
+</body>
+
+</html>
