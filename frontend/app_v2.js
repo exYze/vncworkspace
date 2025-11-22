@@ -78,6 +78,10 @@ const app = {
         window.location.href = `${API_URL}/auth/login/authentik`;
     },
 
+    handleGoogleLogin: () => {
+        window.location.href = `${API_URL}/auth/login/google`;
+    },
+
     handleRegister: async (e) => {
         e.preventDefault();
         const username = document.getElementById('reg-username').value;
@@ -302,20 +306,87 @@ const app = {
         await app.loadAdminStats();
         await app.loadAdminUsers();
         // Default tab
-        app.switchAdminTab('users');
+        app.switchAdminTab('dashboard');
     },
 
     switchAdminTab: (tabId) => {
         document.querySelectorAll('.admin-tab').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.admin-sidebar li').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.sidebar-menu li').forEach(el => el.classList.remove('active'));
 
-        document.getElementById(`admin-${tabId}-view`).classList.add('active');
-        document.getElementById(`tab-${tabId}`).classList.add('active');
+        const view = document.getElementById(`admin-${tabId}-view`);
+        if (view) view.classList.add('active');
+
+        const tabBtn = document.getElementById(`tab-${tabId}`);
+        if (tabBtn) tabBtn.classList.add('active');
 
         if (tabId === 'users') app.loadAdminUsers();
         if (tabId === 'workspaces') app.loadAdminWorkspaces();
         if (tabId === 'sessions') app.loadAdminSessions();
         if (tabId === 'settings') app.loadAdminSettings();
+        if (tabId === 'registry') app.loadRegistry();
+    },
+
+    // Registry Data
+    registryImages: [
+        { name: 'Ubuntu Jammy', image: 'kasmweb/ubuntu-jammy:1.14.0', icon: 'fa-brands fa-ubuntu', category: 'Desktop', description: 'Ubuntu 22.04 LTS Desktop' },
+        { name: 'Kali Linux', image: 'kasmweb/kali-rolling:1.14.0', icon: 'fa-solid fa-dragon', category: 'Desktop', description: 'Kali Linux for Penetration Testing' },
+        { name: 'Debian Bookworm', image: 'kasmweb/debian-bookworm:1.14.0', icon: 'fa-brands fa-linux', category: 'Desktop', description: 'Debian 12 Bookworm Desktop' },
+        { name: 'CentOS 7', image: 'kasmweb/centos-7-desktop:1.14.0', icon: 'fa-brands fa-centos', category: 'Desktop', description: 'CentOS 7 Desktop Environment' },
+        { name: 'Chrome', image: 'kasmweb/chrome:1.14.0', icon: 'fa-brands fa-chrome', category: 'Browser', description: 'Google Chrome Browser' },
+        { name: 'Firefox', image: 'kasmweb/firefox:1.14.0', icon: 'fa-brands fa-firefox', category: 'Browser', description: 'Mozilla Firefox Browser' },
+        { name: 'Edge', image: 'kasmweb/edge:1.14.0', icon: 'fa-brands fa-edge', category: 'Browser', description: 'Microsoft Edge Browser' },
+        { name: 'VS Code', image: 'kasmweb/vscode:1.14.0', icon: 'fa-solid fa-code', category: 'Development', description: 'Visual Studio Code IDE' },
+        { name: 'Blender', image: 'kasmweb/blender:1.14.0', icon: 'fa-solid fa-cube', category: 'Multimedia', description: 'Blender 3D Creation Suite' },
+        { name: 'Discord', image: 'kasmweb/discord:1.14.0', icon: 'fa-brands fa-discord', category: 'Multimedia', description: 'Discord Chat Application' },
+        { name: 'GIMP', image: 'kasmweb/gimp:1.14.0', icon: 'fa-solid fa-paintbrush', category: 'Multimedia', description: 'GIMP Image Editor' },
+        { name: 'VLC', image: 'kasmweb/vlc:1.14.0', icon: 'fa-solid fa-play', category: 'Multimedia', description: 'VLC Media Player' }
+    ],
+
+    loadRegistry: () => {
+        const container = document.getElementById('registry-container');
+        container.innerHTML = app.registryImages.map(img => `
+            <div class="registry-card" onclick="app.installFromRegistry('${img.image}', '${img.name}', '${img.category}', '${img.icon}', '${img.description}')">
+                <div class="registry-check"><i class="fa-solid fa-circle-check"></i></div>
+                <div class="registry-icon"><i class="${img.icon}"></i></div>
+                <div class="registry-info">
+                    <h4>${img.name}</h4>
+                    <p>${img.description}</p>
+                    <span class="badge badge-secondary">${img.category}</span>
+                </div>
+            </div>
+        `).join('');
+    },
+
+    installFromRegistry: async (image, name, category, icon, description) => {
+        if (!confirm(`Install ${name}?`)) return;
+
+        const data = {
+            name: image,
+            friendly_name: name,
+            description: description,
+            category: category,
+            icon: icon,
+            enabled: true
+        };
+
+        try {
+            app.showToast(`Installing ${name}...`, 'info');
+            const res = await fetch(`${API_URL}/admin/workspaces`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${state.token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (!res.ok) throw new Error('Failed to install workspace');
+
+            app.showToast(`${name} installed successfully!`, 'success');
+            app.switchAdminTab('workspaces');
+        } catch (err) {
+            app.showToast(err.message, 'error');
+        }
     },
 
     loadAdminStats: async () => {
@@ -385,16 +456,6 @@ const app = {
             });
             const workspaces = await res.json();
             const tbody = document.getElementById('workspaces-table-body');
-
-            // Add "Add New" button to header if not present (hacky but works for now)
-            const header = document.querySelector('#admin-workspaces-view .tab-header');
-            if (!header.querySelector('.btn-primary')) {
-                const btn = document.createElement('button');
-                btn.className = 'btn btn-primary btn-sm';
-                btn.innerHTML = '<i class="fa-solid fa-plus"></i> Add New';
-                btn.onclick = () => app.openModal('add-workspace-modal');
-                header.appendChild(btn);
-            }
 
             tbody.innerHTML = workspaces.map(w => `
                 <tr>

@@ -61,6 +61,16 @@ oauth.register(
     }
 )
 
+oauth.register(
+    name='google',
+    client_id=settings.GOOGLE_CLIENT_ID,
+    client_secret=settings.GOOGLE_CLIENT_SECRET,
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_kwargs={
+        'scope': 'openid email profile'
+    }
+)
+
 # Auth Utils
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
@@ -338,6 +348,57 @@ async def auth_authentik_callback(request: Request, db: AsyncSession = Depends(g
     )
     
     # Redirect to frontend with token
+    return RedirectResponse(url=f"http://localhost:8080/?token={access_token}")
+
+# Google OAuth Routes
+@app.get("/api/auth/login/google")
+async def login_google(request: Request):
+    redirect_uri = "http://localhost:8080/api/auth/callback/google"
+    return await oauth.google.authorize_redirect(request, redirect_uri)
+
+@app.get("/api/auth/callback/google")
+async def auth_google_callback(request: Request, db: AsyncSession = Depends(get_db)):
+    try:
+        token = await oauth.google.authorize_access_token(request)
+        user_info = token.get('userinfo')
+        if not user_info:
+             user_info = await oauth.google.userinfo(token=token)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Google OAuth Error: {str(e)}")
+
+    logger.info(f"Google User Info: {user_info}")
+    email = user_info.get('email')
+    username = email.split('@')[0] # Use part before @ as username
+    
+    # Check if user exists
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalars().first()
+    
+    if not user:
+        # Check if username is taken
+        result = await db.execute(select(User).where(User.username == username))
+        if result.scalars().first():
+            # Append random string to username
+            import random, string
+            suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=4))
+            username = f"{username}_{suffix}"
+
+        user = User(
+            username=username,
+            email=email,
+            hashed_password=get_password_hash(settings.SESSION_SECRET_KEY + email), # Placeholder
+            is_active=True
+        )
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+    
+    # Create access token
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user.username}, expires_delta=access_token_expires
+    )
+    
     return RedirectResponse(url=f"http://localhost:8080/?token={access_token}")
 
 # Workspaces

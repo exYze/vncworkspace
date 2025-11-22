@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     AUTHENTIK_PUBLIC_URL: str = "http://localhost:9000" # Public URL for browser
     SESSION_SECRET_KEY: str = "super-secret-session-key"
 
+    # Google OAuth Settings
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+
     class Config:
         env_file = ".env"
 

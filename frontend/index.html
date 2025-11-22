@@ -56,6 +56,10 @@
                         style="background-color: #fd4b2d; color: white; border: none;">
                         <i class="fa-solid fa-shield-halved"></i> Login with Authentik
                     </button>
+                    <button type="button" onclick="app.handleGoogleLogin()" class="btn-secondary btn-block"
+                        style="background-color: #4285F4; color: white; border: none; margin-top: 10px;">
+                        <i class="fa-brands fa-google"></i> Sign in with Google
+                    </button>
                 </form>
                 <div class="auth-footer">
                     <p>Don't have an account? <a href="#" onclick="app.toggleAuthMode()">Register</a></p>
@@ -128,25 +132,57 @@
         <section id="admin-view" class="view">
             <div class="admin-layout">
                 <aside class="admin-sidebar">
-                    <ul>
-                        <li onclick="app.switchAdminTab('users')" class="active" id="tab-users"><i
-                                class="fa-solid fa-users"></i> Users</li>
-                        <li onclick="app.switchAdminTab('workspaces')" id="tab-workspaces"><i
-                                class="fa-solid fa-box-open"></i> Workspaces</li>
-                        <li onclick="app.switchAdminTab('sessions')" id="tab-sessions"><i
+                    <div class="sidebar-header">
+                        <input type="text" placeholder="Search..." class="sidebar-search">
+                    </div>
+                    <ul class="sidebar-menu">
+                        <li onclick="app.switchAdminTab('dashboard')" id="tab-dashboard" class="active"><i
+                                class="fa-solid fa-grip"></i> Dashboard</li>
+
+                        <li class="menu-category">
+                            <span><i class="fa-solid fa-shield-halved"></i> Access Management</span>
+                            <i class="fa-solid fa-plus"></i>
+                        </li>
+                        <li onclick="app.switchAdminTab('users')" id="tab-users" class="menu-item sub-item">Users</li>
+                        <li class="menu-item sub-item disabled">Groups</li>
+
+                        <li class="menu-category">
+                            <span><i class="fa-solid fa-network-wired"></i> Infrastructure</span>
+                            <i class="fa-solid fa-minus"></i>
+                        </li>
+                        <li class="menu-item sub-item disabled">Docker Agents</li>
+                        <li class="menu-item sub-item disabled">Servers</li>
+
+                        <li onclick="app.switchAdminTab('sessions')" id="tab-sessions" class="menu-item"><i
                                 class="fa-solid fa-server"></i> Sessions</li>
-                        <li onclick="app.switchAdminTab('settings')" id="tab-settings"><i class="fa-solid fa-gear"></i>
-                            Settings</li>
+
+                        <li class="menu-category">
+                            <span><i class="fa-solid fa-box-open"></i> Workspaces</span>
+                            <i class="fa-solid fa-minus"></i>
+                        </li>
+                        <li onclick="app.switchAdminTab('workspaces')" id="tab-workspaces" class="menu-item sub-item">
+                            Workspaces</li>
+                        <li onclick="app.switchAdminTab('registry')" id="tab-registry" class="menu-item sub-item">
+                            Registry</li>
+
+                        <li onclick="app.switchAdminTab('settings')" id="tab-settings" class="menu-item"><i
+                                class="fa-solid fa-gear"></i> Settings</li>
+                        <li class="menu-item disabled"><i class="fa-solid fa-stethoscope"></i> Diagnostics</li>
                     </ul>
                 </aside>
                 <div class="admin-content">
-                    <!-- Stats Cards -->
-                    <div class="stats-grid" id="admin-stats">
-                        <!-- Stats injected here -->
+                    <!-- Stats/Dashboard Tab -->
+                    <div id="admin-dashboard-view" class="admin-tab active">
+                        <div class="tab-header">
+                            <h3>System Overview</h3>
+                        </div>
+                        <div class="stats-grid" id="admin-stats">
+                            <!-- Stats injected here -->
+                        </div>
                     </div>
 
                     <!-- Users Tab -->
-                    <div id="admin-users-view" class="admin-tab active">
+                    <div id="admin-users-view" class="admin-tab">
                         <div class="tab-header">
                             <h3>User Management</h3>
                             <button onclick="app.showCreateUserModal()" class="btn-sm btn-primary"><i
@@ -172,8 +208,8 @@
                     <div id="admin-workspaces-view" class="admin-tab">
                         <div class="tab-header">
                             <h3>Workspace Images</h3>
-                            <button onclick="app.showCreateWorkspaceModal()" class="btn-sm btn-primary"><i
-                                    class="fa-solid fa-plus"></i> Add Image</button>
+                            <button onclick="app.openModal('add-workspace-modal')" class="btn-sm btn-primary"><i
+                                    class="fa-solid fa-plus"></i> Add Manual</button>
                         </div>
                         <div class="table-responsive">
                             <table class="data-table">
@@ -187,6 +223,20 @@
                                 </thead>
                                 <tbody id="workspaces-table-body"></tbody>
                             </table>
+                        </div>
+                    </div>
+
+                    <!-- Registry Tab -->
+                    <div id="admin-registry-view" class="admin-tab">
+                        <div class="tab-header">
+                            <h3>Workspace Registry</h3>
+                            <div class="registry-meta">
+                                <div class="pie-chart-mini"></div>
+                                <span>Select images to install</span>
+                            </div>
+                        </div>
+                        <div class="registry-grid" id="registry-container">
+                            <!-- Registry items injected here -->
                         </div>
                     </div>
 
@@ -232,6 +282,44 @@
             </div>
         </section>
     </main>
+
+    <!-- Add Workspace Modal -->
+    <div id="add-workspace-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Workspace Image</h3>
+                <button onclick="app.closeModal('add-workspace-modal')" class="close-modal">&times;</button>
+            </div>
+            <form onsubmit="app.handleCreateWorkspace(event)">
+                <div class="form-group">
+                    <label>Docker Image Name</label>
+                    <input type="text" id="ws-image" required placeholder="e.g., kasmweb/ubuntu-jammy:1.14.0">
+                </div>
+                <div class="form-group">
+                    <label>Friendly Name</label>
+                    <input type="text" id="ws-name" required placeholder="e.g., Ubuntu Desktop">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" id="ws-desc" required placeholder="Brief description">
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="ws-category" class="form-control">
+                        <option value="Desktop">Desktop</option>
+                        <option value="Browser">Browser</option>
+                        <option value="Development">Development</option>
+                        <option value="Multimedia">Multimedia</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Icon Class (FontAwesome)</label>
+                    <input type="text" id="ws-icon" value="fa-brands fa-linux" placeholder="fa-brands fa-linux">
+                </div>
+                <button type="submit" class="btn-primary btn-block">Add Workspace</button>
+            </form>
+        </div>
+    </div>
 
     <!-- Toast Notification -->
     <div id="toast" class="toast"></div>
