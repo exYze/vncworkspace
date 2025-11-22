@@ -309,6 +309,7 @@ async def auth_authentik_callback(request: Request, db: AsyncSession = Depends(g
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"OIDC Error: {str(e)}")
 
+    logger.info(f"Authentik User Info: {user_info}")
     username = user_info.get('preferred_username', user_info.get('nickname', user_info.get('sub')))
     email = user_info.get('email')
     
