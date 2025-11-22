@@ -95,9 +95,20 @@
         <section id="dashboard-view" class="view">
             <div class="dashboard-header">
                 <h2>Available Workspaces</h2>
-                <div class="session-status" id="active-session-card" style="display: none;">
+            </div>
+
+            <div class="workspaces-grid" id="workspaces-container">
+                <!-- Workspaces injected here -->
+            </div>
+
+            <!-- Active Session Section -->
+            <div id="active-session-section" style="display: none; margin-top: 3rem;">
+                <div class="dashboard-header">
+                    <h2>Active Session</h2>
+                </div>
+                <div class="session-status" id="active-session-card">
                     <div class="status-info">
-                        <span class="status-indicator pulse"></span>
+                        <span class="status-indicator pulse-dot"></span>
                         <div>
                             <h3>Active Session: <span id="session-ws-name">Ubuntu</span></h3>
                             <p>Running on port <span id="session-port">6901</span></p>
@@ -110,10 +121,6 @@
                             Stop</button>
                     </div>
                 </div>
-            </div>
-
-            <div class="workspaces-grid" id="workspaces-container">
-                <!-- Workspaces injected here -->
             </div>
         </section>
 

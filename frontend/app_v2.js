@@ -230,14 +230,14 @@ const app = {
             const session = await res.json();
             state.activeSession = session;
 
-            const statusCard = document.getElementById('active-session-card');
+            const statusSection = document.getElementById('active-session-section');
             if (session) {
-                statusCard.style.display = 'flex';
+                statusSection.style.display = 'block';
                 document.getElementById('session-ws-name').textContent = session.workspace_image.friendly_name;
                 document.getElementById('session-port').textContent = session.vnc_port;
                 app.renderWorkspaces(); // Re-render to disable buttons
             } else {
-                statusCard.style.display = 'none';
+                statusSection.style.display = 'none';
                 app.renderWorkspaces();
             }
         } catch (err) {
